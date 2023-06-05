@@ -1,7 +1,6 @@
 package chat.gpt.src.modelo;
 
 public class Peca {
-
     private final Integer valor;
     private Integer posicao;
 
@@ -22,15 +21,30 @@ public class Peca {
         this.posicao = posicao;
     }
 
-    public String getTextoValor() {
-        return this.valor == 9 ? " " : this.valor.toString();
+    public String getLabel() {
+        return valor == 9 ? " " : valor.toString();
     }
 
-    public Boolean ehPecaVazia() {
-        return this.valor == 9;
+    @Override
+    public String toString() {
+        return getLabel();
     }
 
-    public Boolean posicaoCorreta() {
-        return this.getPosicao().equals(this.getValor() - 1);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Peca peca = (Peca) o;
+
+        if (!valor.equals(peca.valor)) return false;
+        return posicao.equals(peca.posicao);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = valor.hashCode();
+        result = 31 * result + posicao.hashCode();
+        return result;
     }
 }

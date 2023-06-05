@@ -1,7 +1,10 @@
 package chat.gpt.src.view;
 
 import chat.gpt.src.exception.JogoException;
-import chat.gpt.src.servico.Jogo;
+import chat.gpt.src.modelo.Peca;
+import chat.gpt.src.modelo.Tabuleiro;
+import chat.gpt.src.servico.JogoService;
+import chat.gpt.src.servico.JogoServiceImpl;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,12 +16,14 @@ import java.util.stream.IntStream;
 
 public class View extends JFrame {
 
-    private final Jogo jogo;
+    private final Tabuleiro tabuleiro;
+    private final JogoService service;
     private final List<Botao> botaoPecas;
 
-    public View(Jogo jogo) {
+    public View(Tabuleiro tabuleiro) {
         super("Jogo dos oito");
-        this.jogo = jogo;
+        this.tabuleiro = tabuleiro;
+        this.service = new JogoServiceImpl();
         this.botaoPecas = new ArrayList<>(9);
         inicializarInterfaceGrafica();
     }
@@ -45,8 +50,9 @@ public class View extends JFrame {
         IntStream.range(0, 9).forEach(i -> botaoPecas.add(criarBotao(i)));
     }
 
-    private Botao criarBotao(Integer valor) {
-        return new Botao(criarJButton(), valor);
+    private Botao criarBotao(Integer posicao) {
+        Peca v = tabuleiro.getPecaPorPosicao(posicao);
+        return new Botao(criarJButton(), v.getValor());
     }
 
     private JButton criarJButton() {
@@ -59,23 +65,23 @@ public class View extends JFrame {
 
     private void criarBotaoEmbaralhar() {
         JButton botaoEmbaralhar = new JButton("Embaralhar");
-        botaoEmbaralhar.addActionListener(e -> embaralharJogo());
+        botaoEmbaralhar.addActionListener(e -> embaralhar());
         add(botaoEmbaralhar);
     }
 
-    private void embaralharJogo() {
-        jogo.embaralharPecas();
+    private void embaralhar() {
+        service.embaralharTabuleiro(this.tabuleiro);
         atualizarInterfaceTabuleiro();
     }
 
     private void criarBotaoReinicar() {
         JButton botaoReiniciar = new JButton("Reiniciar");
-        botaoReiniciar.addActionListener(e -> reiniciarJogo());
+        botaoReiniciar.addActionListener(e -> reiniciar());
         add(botaoReiniciar);
     }
 
-    private void reiniciarJogo() {
-        jogo.reiniciar();
+    private void reiniciar() {
+        service.reiniciarTabuleiro(tabuleiro);
         atualizarInterfaceTabuleiro();
     }
 
@@ -87,8 +93,8 @@ public class View extends JFrame {
 
     private void atualizarInterfaceTabuleiro() {
         IntStream.range(0, 9).forEach(i -> {
-                    botaoPecas.get(i).getjButton().setText(jogo.getTabuleiro().getPecaPorPosicao(i).getTextoValor());
-                    botaoPecas.get(i).setValor(jogo.getTabuleiro().getPecaPorPosicao(i).getValor());
+                    botaoPecas.get(i).getjButton().setText(tabuleiro.getPecaPorPosicao(i).getLabel());
+                    botaoPecas.get(i).setValor(tabuleiro.getPecaPorPosicao(i).getValor());
                 }
         );
     }
@@ -99,14 +105,20 @@ public class View extends JFrame {
             public void mouseClicked(MouseEvent e) {
                 JButton jButtonClicado = (JButton) e.getSource();
                 Botao botaoClicado = getBotaoClicado(jButtonClicado);
-                jogo.fazerMovimento(botaoClicado.getValor());
+                Boolean movimentoFeito = service.fazerMovimento(tabuleiro, tabuleiro.getPecaPorValor(botaoClicado.getValor()));
                 atualizarInterfaceTabuleiro();
-                Boolean vitoria = jogo.verificarVitoria();
-                if (vitoria) {
-                    JOptionPane.showMessageDialog(null, "Parabéns! Você venceu o jogo!");
+                if (Boolean.TRUE.equals(movimentoFeito)) {
+                    verificarVitoria();
                 }
             }
         };
+    }
+
+    private void verificarVitoria() {
+        Boolean vitoria = service.verificarVitoria(tabuleiro);
+        if (vitoria) {
+            JOptionPane.showMessageDialog(null, "Parabéns! Você venceu o jogo!");
+        }
     }
 
     private Botao getBotaoClicado(JButton jButtonClicado) {
